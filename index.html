@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agenda de Tarefas</title>
+
+    <!-- Ícones Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
+    <!-- Estilos principais -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- CALENDÁRIO -->
+        <div class="calendar-card">
+            <div class="calendar-header">
+                <i id="prev-month" class="fas fa-chevron-left"></i>
+                <h2 id="month-year">Mês Ano</h2>
+                <i id="next-month" class="fas fa-chevron-right"></i>
+            </div>
+
+            <div class="calendar-weekdays">
+                <div>Dom</div>
+                <div>Seg</div>
+                <div>Ter</div>
+                <div>Qua</div>
+                <div>Qui</div>
+                <div>Sex</div>
+                <div>Sáb</div>
+            </div>
+
+            <div id="calendar-days" class="calendar-days">
+                <!-- dias vão aparecer aqui pelo JS -->
+            </div>
+        </div>
+
+        <!-- ÁREA DAS TAREFAS -->
+        <div class="tasks-card">
+            <h2 id="titulo-dia">Tarefas do dia</h2>
+
+            <!-- Input -->
+            <div class="add-task">
+                <input type="text" id="tarefa" placeholder="Digite a tarefa...">
+                <button id="add-btn"><i class="fas fa-plus"></i></button>
+            </div>
+
+            <!-- Lista de tarefas -->
+            <div id="lista" class="tasks-list">
+                <!-- cards de tarefas aparecem aqui via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Script principal -->
+    <script src="script.js"></script>
+</body>
+</html>
