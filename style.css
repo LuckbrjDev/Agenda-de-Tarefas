@@ -9,25 +9,39 @@
 body {
     background: #f4f4f4;
     padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
 }
 
-/* ========= LAYOUT ========= */
+/* ========= LAYOUT PRINCIPAL ========= */
 .container {
     display: flex;
     justify-content: center;
     gap: 40px;
     flex-wrap: wrap;
+    max-width: 1200px;
+    width: 100%;
 }
 
-/* ========= CALENDÁRIO ========= */
-.calendar-card {
-    width: 360px;
+.calendar-card, .tasks-card {
     background: white;
     padding: 20px;
     border-radius: 18px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
+.calendar-card {
+    width: 360px;
+}
+
+.tasks-card {
+    width: 450px;
+}
+
+
+/* ========= CALENDÁRIO ========= */
 .calendar-header {
     display: flex;
     justify-content: space-between;
@@ -74,36 +88,44 @@ body {
     transition: 0.2s;
     background: #fafafa;
     box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    position: relative; /* Necessário para o indicador de tarefa */
 }
 
-.calendar-days div:hover {
+.calendar-days div:hover:not(.empty) {
     background: #eceaff;
 }
 
 .calendar-days .dia-atual {
-    background: #6a5acd;
-    color: white;
-    font-weight: bold;
+    border: 2px solid #6a5acd; /* Adiciona uma borda para diferenciar do selecionado */
+    background: #fafafa;
 }
 
 .calendar-days .dia-selecionado {
     background: #4c3bff;
     color: white;
     font-weight: bold;
+    border: none;
 }
+
+/* INDICADOR DE TAREFA (Bolinha) */
+.calendar-days div.has-task::after {
+    content: '';
+    position: absolute;
+    bottom: 5px; 
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 6px;
+    background-color: #ff3b3b; /* Vermelho para indicar tarefa */
+    border-radius: 50%;
+}
+
 
 /* ========= CARD DAS TAREFAS ========= */
-.tasks-card {
-    width: 450px;
-    background: white;
-    padding: 25px;
-    border-radius: 18px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
 .tasks-card h2 {
     margin-bottom: 20px;
     text-align: center;
+    font-size: 1.5rem;
 }
 
 /* ========= INPUT + BOTÃO ========= */
@@ -161,18 +183,26 @@ body {
 }
 
 .task-card:hover {
-    transform: translateY(-3px);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .task-left {
     display: flex;
     align-items: center;
     gap: 10px;
+    flex-grow: 1;
+}
+
+.task-left span {
+    word-break: break-word; /* Garante que textos longos se ajustem */
 }
 
 .task-check {
     font-size: 22px;
     cursor: pointer;
+    color: #555;
+    transition: color 0.2s;
 }
 
 .task-delete {
@@ -189,17 +219,100 @@ body {
 /* ========= TAREFA CONCLUÍDA ========= */
 .task-done span {
     text-decoration: line-through;
-    color: #4CAF50;
+    color: #888;
 }
 
 .task-done .task-check {
     color: #4CAF50 !important;
 }
 
+/* ========= ESTILOS DO MODAL DE LOGIN (NOVO) ========= */
+.login-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.login-content {
+    background: white;
+    padding: 40px 30px;
+    border-radius: 15px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    width: 350px;
+}
+
+.login-content h3 {
+    margin-bottom: 25px;
+    font-size: 1.5rem;
+    color: #6a5acd;
+}
+
+.login-content input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+.auth-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.auth-actions button {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: #6a5acd;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.auth-actions button:hover {
+    background: #5944d6;
+}
+
+.auth-switch {
+    margin-top: 10px;
+}
+
+.auth-switch a {
+    color: #6a5acd;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.auth-error-message {
+    color: #ff3b3b;
+    font-size: 0.9rem;
+    margin-top: 10px;
+    min-height: 20px; 
+}
+
+
 /* ========= RESPONSIVO ========= */
 @media (max-width: 900px) {
     .container {
         flex-direction: column;
         align-items: center;
+    }
+
+    .calendar-card, .tasks-card {
+        width: 100%;
+        max-width: 600px;
     }
 }
