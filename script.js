@@ -22,9 +22,9 @@ const authError = document.getElementById("auth-error");
 let dataAtual = new Date();
 let diaSelecionado = formatarData(new Date());
 
-let usuarioAtivo = null; // Armazena o UID (ID único) do usuário logado do Firebase
-let isLoginMode = true; // Controla se estamos em modo login ou registro
-let diasComTarefas = {}; // Cache para marcar os dias com tarefas (indicadores visuais)
+let usuarioAtivo = null; 
+let isLoginMode = true; 
+let diasComTarefas = {}; 
 
 
 /* =======================================
@@ -50,7 +50,7 @@ toggleAuth.addEventListener('click', (e) => {
     toggleAuthMode();
 });
 
-/* ========= FUNÇÃO PRINCIPAL DE AUTENTICAÇÃO ========= */
+/* ========= FUNÇÃO PRINCIPAL DE AUTENTICAÇÃO (FIREBASE AUTH) ========= */
 function handleAuth() {
     const email = emailInput.value.trim();
     const password = passwordInput.value;
@@ -72,7 +72,7 @@ function handleAuth() {
         // MODO REGISTRO
         auth.createUserWithEmailAndPassword(email, password)
             .then(() => {
-                // A função onAuthStateChanged cuidará de logar e carregar a agenda
+                // Se sucesso, o onAuthStateChanged loga o usuário
             })
             .catch(error => {
                 let errorMessage = "Erro ao criar conta.";
@@ -98,7 +98,7 @@ auth.onAuthStateChanged(user => {
         usuarioAtivo = user.uid; 
         loginModal.style.display = 'none';
         
-        // Inicializa a interface (agora carrega dados da nuvem)
+        // Inicializa a interface com os dados do usuário
         gerarCalendario();
         carregarTarefas(); 
     } else {
@@ -112,24 +112,23 @@ auth.onAuthStateChanged(user => {
 
 toggleAuthMode();
 
+
 /* ========================================================
-   ==== FUNÇÕES DE PERSISTÊNCIA (MIGRADAS PARA FIRESTORE) ====
+   ==== FUNÇÕES DE PERSISTÊNCIA (FIRESTORE DATABASE) ====
    ======================================================== */
 
 /**
- * Persiste a lista de tarefas para um dia específico no Firestore.
- * Collection: users -> Document: [UID] -> Collection: tasks -> Document: [YYYY-MM-DD]
+ * Salva a lista de tarefas para o dia no Firestore.
  */
 async function salvarTarefas(data, tarefas) {
     if (!usuarioAtivo) return;
 
     try {
+        // users/{UID}/tasks/{YYYY-MM-DD}
         const docRef = db.collection('users').doc(usuarioAtivo).collection('tasks').doc(data);
         
-        // Salva o array de tarefas.
         await docRef.set({ tarefas: tarefas });
 
-        // Atualiza a visualização do calendário (indicadores)
         carregarIndicadoresTarefas(); 
     } catch (error) {
         console.error("Erro ao salvar tarefas no Firestore:", error);
@@ -138,7 +137,7 @@ async function salvarTarefas(data, tarefas) {
 }
 
 /**
- * Carrega a lista de tarefas para o dia selecionado do Firestore.
+ * Carrega a lista de tarefas do Firestore.
  */
 async function carregarTarefas() {
     if (!usuarioAtivo) return;
@@ -152,7 +151,6 @@ async function carregarTarefas() {
 
         let tarefas = [];
         if (doc.exists) {
-            // Se o documento existir, pega o array 'tarefas'
             tarefas = doc.data().tarefas || []; 
         }
 
@@ -175,17 +173,16 @@ async function carregarTarefas() {
 async function carregarIndicadoresTarefas() {
     if (!usuarioAtivo) return;
 
-    diasComTarefas = {}; // Resetar cache
+    diasComTarefas = {}; 
     const ano = dataAtual.getFullYear();
     const mes = dataAtual.getMonth();
 
     try {
-        // Pega todos os documentos (dias) da sub-coleção 'tasks' do usuário
         const tasksCollectionRef = db.collection('users').doc(usuarioAtivo).collection('tasks');
         const snapshot = await tasksCollectionRef.get();
 
         snapshot.forEach(doc => {
-            const dataKey = doc.id; // Ex: '2025-12-01'
+            const dataKey = doc.id; 
             const [docAno, docMes] = dataKey.split('-');
             
             // Verifica se pertence ao mês/ano atual E se tem tarefas
@@ -195,7 +192,7 @@ async function carregarIndicadoresTarefas() {
         });
         
         // Renderiza o calendário com os novos indicadores
-        gerarCalendario(false); // Não chama carregarIndicadoresTarefas novamente
+        gerarCalendario(false); 
     } catch (error) {
         console.error("Erro ao carregar indicadores:", error);
     }
@@ -248,7 +245,7 @@ function gerarCalendario(shouldLoadIndicators = true) {
 
         let dataString = `${ano}-${(mes+1).toString().padStart(2,"0")}-${dia.toString().padStart(2,"0")}`;
 
-        // NOVO: VERIFICA SE O DIA TEM TAREFAS USANDO O CACHE FIRESTORE
+        // VERIFICA INDICADORES DO FIRESTORE
         if (diasComTarefas[dataString]) {
             element.classList.add("has-task");
         }
@@ -266,18 +263,19 @@ function gerarCalendario(shouldLoadIndicators = true) {
 
         element.addEventListener("click", () => {
             diaSelecionado = dataString;
-            gerarCalendario(false); // Mantém os indicadores atuais
-            carregarTarefas(); // Carrega a lista do dia
+            gerarCalendario(false); 
+            carregarTarefas(); 
         });
 
         calendarDays.appendChild(element);
     }
     
-    // NOVO: Só carrega os indicadores do Firebase se for o primeiro carregamento ou mudança de mês
+    // Chama o Firebase para atualizar os indicadores
     if(shouldLoadIndicators) {
         carregarIndicadoresTarefas();
     }
 }
+
 
 /* ========= BOTÕES DE TROCA DE MÊS ========= */
 prevMonthBtn.addEventListener("click", () => {
@@ -307,7 +305,6 @@ function criarCardTarefa(texto, feita, index) {
     const check = document.createElement("i");
     check.classList.add("fa-solid", "fa-circle-check", "task-check");
     
-    // Ações de modificação agora são assíncronas
     check.addEventListener("click", () => marcarComoConcluida(index));
 
     const span = document.createElement("span");
@@ -326,7 +323,7 @@ function criarCardTarefa(texto, feita, index) {
     lista.appendChild(card);
 }
 
-/* ========= ADICIONAR TAREFA (AGORA ASYNC) ========= */
+/* ========= ADICIONAR TAREFA (ASYNC) ========= */
 addBtn.addEventListener("click", async () => {
     if (!usuarioAtivo) {
         displayAuthError("Faça login para adicionar tarefas.");
@@ -336,7 +333,7 @@ addBtn.addEventListener("click", async () => {
     let texto = inputTarefa.value.trim();
     if (texto === "") return;
 
-    // 1. Tenta carregar as tarefas existentes (async)
+    // 1. Carrega as tarefas existentes do Firestore
     let tarefas = [];
     try {
         const docRef = db.collection('users').doc(usuarioAtivo).collection('tasks').doc(diaSelecionado);
@@ -352,14 +349,14 @@ addBtn.addEventListener("click", async () => {
     // 2. Adiciona a nova tarefa
     tarefas.push({ texto: texto, feita: false });
     
-    // 3. Salva a lista completa de volta no Firestore (async)
+    // 3. Salva a lista completa de volta no Firestore
     await salvarTarefas(diaSelecionado, tarefas); 
 
     inputTarefa.value = "";
-    carregarTarefas(); // Recarrega a lista
+    carregarTarefas();
 });
 
-/* ========= MARCAR TAREFA COMO CONCLUÍDA (AGORA ASYNC) ========= */
+/* ========= MARCAR TAREFA COMO CONCLUÍDA (ASYNC) ========= */
 async function marcarComoConcluida(index) {
     if (!usuarioAtivo) return;
 
@@ -382,7 +379,7 @@ async function marcarComoConcluida(index) {
     }
 }
 
-/* ========= REMOVER TAREFA (AGORA ASYNC) ========= */
+/* ========= REMOVER TAREFA (ASYNC) ========= */
 async function removerTarefa(index) {
     if (!usuarioAtivo) return;
     
