@@ -1,6 +1,6 @@
 /* ============================
    IMPORTS FIREBASE (MODULAR)
-   ============================ */
+============================ */
 import {
     getAuth,
     onAuthStateChanged,
@@ -13,19 +13,17 @@ import {
     doc,
     setDoc,
     getDoc,
-    getDocs,
-    getFirestore
+    getDocs
 } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
-import { db, app } from "./firebase/config.js";
+import { app, db } from "./firebase-config.js";
 
 /* INSTÂNCIA DO AUTH */
 const auth = getAuth(app);
 
 /* ============================
    VARIÁVEIS DO DOM
-   ============================ */
-
+============================ */
 const calendarDays = document.getElementById("calendar-days");
 const monthYear = document.getElementById("month-year");
 const prevMonthBtn = document.getElementById("prev-month");
@@ -47,8 +45,7 @@ const authError = document.getElementById("auth-error");
 
 /* ============================
    VARIÁVEIS GLOBAIS
-   ============================ */
-
+============================ */
 let dataAtual = new Date();
 let diaSelecionado = formatarData(new Date());
 let usuarioAtivo = null;
@@ -56,9 +53,8 @@ let isLoginMode = true;
 let diasComTarefas = {};
 
 /* ============================
-   FUNÇÕES DE AUTENTICAÇÃO
-   ============================ */
-
+   AUTENTICAÇÃO
+============================ */
 function displayAuthError(msg) {
     authError.textContent = msg;
 }
@@ -70,10 +66,11 @@ function toggleAuthMode() {
     loginBtn.style.display = isLoginMode ? "block" : "none";
     registerBtn.style.display = isLoginMode ? "none" : "block";
     toggleAuth.textContent = isLoginMode ? "Mudar para Registro" : "Mudar para Login";
+
     displayAuthError("");
 }
 
-toggleAuth.addEventListener('click', (e) => {
+toggleAuth.addEventListener("click", e => {
     e.preventDefault();
     toggleAuthMode();
 });
@@ -96,7 +93,7 @@ function handleAuth() {
                 if (err.code === "auth/email-already-in-use")
                     displayAuthError("Email já está em uso.");
                 else if (err.code === "auth/weak-password")
-                    displayAuthError("A senha deve ter pelo menos 6 caracteres.");
+                    displayAuthError("A senha precisa ter pelo menos 6 caracteres.");
                 else
                     displayAuthError("Erro ao criar conta.");
             });
@@ -107,9 +104,8 @@ loginBtn.addEventListener("click", handleAuth);
 registerBtn.addEventListener("click", handleAuth);
 
 /* ============================
-   MONITORAMENTO DE LOGIN
-   ============================ */
-
+   MONITORAR LOGIN
+============================ */
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         usuarioAtivo = user.uid;
@@ -126,57 +122,46 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 /* ============================
-   FIRESTORE – SALVAR TAREFAS
-   ============================ */
-
+   FIRESTORE - SALVAR TAREFAS
+============================ */
 async function salvarTarefas(data, tarefas) {
     if (!usuarioAtivo) return;
 
-    try {
-        await setDoc(
-            doc(db, "users", usuarioAtivo, "tasks", data),
-            { tarefas }
-        );
+    await setDoc(
+        doc(db, "users", usuarioAtivo, "tasks", data),
+        { tarefas }
+    );
 
-        carregarIndicadoresTarefas();
-    } catch (e) {
-        console.error("Erro ao salvar:", e);
-    }
+    carregarIndicadoresTarefas();
 }
 
 /* ============================
-   FIRESTORE – CARREGAR TAREFAS
-   ============================ */
-
+   FIRESTORE - CARREGAR TAREFAS
+============================ */
 async function carregarTarefas() {
     if (!usuarioAtivo) return;
 
     lista.innerHTML = "";
     tituloDia.textContent = `Tarefas de ${diaSelecionado}`;
 
-    try {
-        const ref = doc(db, "users", usuarioAtivo, "tasks", diaSelecionado);
-        const snap = await getDoc(ref);
+    const ref = doc(db, "users", usuarioAtivo, "tasks", diaSelecionado);
+    const snap = await getDoc(ref);
 
-        const tarefas = snap.exists() ? snap.data().tarefas : [];
+    const tarefas = snap.exists() ? snap.data().tarefas : [];
 
-        if (tarefas.length === 0) {
-            lista.innerHTML = `<p style="text-align:center;color:#888;margin-top:20px;">Nenhuma tarefa.</p>`;
-            return;
-        }
-
-        tarefas.forEach((tarefa, i) =>
-            criarCardTarefa(tarefa.texto, tarefa.feita, i)
-        );
-    } catch (e) {
-        console.error("Erro ao carregar:", e);
+    if (tarefas.length === 0) {
+        lista.innerHTML = `<p style="text-align:center;color:#888;margin-top:20px;">Nenhuma tarefa.</p>`;
+        return;
     }
+
+    tarefas.forEach((tarefa, i) =>
+        criarCardTarefa(tarefa.texto, tarefa.feita, i)
+    );
 }
 
 /* ============================
-   FIRESTORE – CARREGAR DIAS COM TAREFA
-   ============================ */
-
+   FIRESTORE - DIAS COM TAREFAS
+============================ */
 async function carregarIndicadoresTarefas() {
     if (!usuarioAtivo) return;
 
@@ -188,14 +173,13 @@ async function carregarIndicadoresTarefas() {
     const ano = dataAtual.getFullYear();
     const mes = dataAtual.getMonth() + 1;
 
-    snap.forEach(docSnap => {
-        const dataID = docSnap.id;
-        const [y, m] = dataID.split("-");
+    snap.forEach(d => {
+        const id = d.id;
+        const [y, m] = id.split("-");
 
         if (parseInt(y) === ano && parseInt(m) === mes) {
-            const tarefas = docSnap.data().tarefas;
-            if (tarefas && tarefas.length > 0) {
-                diasComTarefas[dataID] = true;
+            if (d.data().tarefas.length > 0) {
+                diasComTarefas[id] = true;
             }
         }
     });
@@ -204,9 +188,8 @@ async function carregarIndicadoresTarefas() {
 }
 
 /* ============================
-   FUNÇÕES DO CALENDÁRIO
-   ============================ */
-
+   CALENDÁRIO
+============================ */
 function formatarData(data) {
     let d = data.getDate().toString().padStart(2, "0");
     let m = (data.getMonth() + 1).toString().padStart(2, "0");
@@ -214,7 +197,7 @@ function formatarData(data) {
     return `${a}-${m}-${d}`;
 }
 
-function gerarCalendario(loadIndicators = true) {
+function gerarCalendario(load = true) {
     if (!usuarioAtivo) return;
 
     calendarDays.innerHTML = "";
@@ -226,8 +209,8 @@ function gerarCalendario(loadIndicators = true) {
     const ultimoDia = new Date(ano, mes + 1, 0).getDate();
 
     const meses = [
-        "Janeiro","Fevereiro","Março","Abril","Maio","Junho",
-        "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"
+        "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
     ];
 
     monthYear.textContent = `${meses[mes]} ${ano}`;
@@ -243,7 +226,7 @@ function gerarCalendario(loadIndicators = true) {
         el.textContent = dia;
 
         const dataStr =
-            `${ano}-${(mes+1).toString().padStart(2,"0")}-${dia.toString().padStart(2,"0")}`;
+            `${ano}-${(mes + 1).toString().padStart(2, "0")}-${dia.toString().padStart(2, "0")}`;
 
         if (diasComTarefas[dataStr]) el.classList.add("has-task");
         if (dataStr === diaSelecionado) el.classList.add("dia-selecionado");
@@ -258,25 +241,22 @@ function gerarCalendario(loadIndicators = true) {
         calendarDays.appendChild(el);
     }
 
-    if (loadIndicators) carregarIndicadoresTarefas();
+    if (load) carregarIndicadoresTarefas();
 }
 
 /* ============================
    ADICIONAR TAREFA
-   ============================ */
-
+============================ */
 addBtn.addEventListener("click", async () => {
     if (!usuarioAtivo) return;
 
     const texto = inputTarefa.value.trim();
     if (!texto) return;
 
-    let tarefas = [];
-
     const ref = doc(db, "users", usuarioAtivo, "tasks", diaSelecionado);
     const snap = await getDoc(ref);
 
-    if (snap.exists()) tarefas = snap.data().tarefas;
+    let tarefas = snap.exists() ? snap.data().tarefas : [];
 
     tarefas.push({ texto, feita: false });
 
@@ -287,43 +267,35 @@ addBtn.addEventListener("click", async () => {
 });
 
 /* ============================
-   MARCAR COMO FEITA
-   ============================ */
-
-async function marcarComoConcluida(index) {
+   AÇÕES DAS TAREFAS
+============================ */
+async function marcarComoConcluida(i) {
     const ref = doc(db, "users", usuarioAtivo, "tasks", diaSelecionado);
     const snap = await getDoc(ref);
-
     if (!snap.exists()) return;
 
     let tarefas = snap.data().tarefas;
-    tarefas[index].feita = !tarefas[index].feita;
+    tarefas[i].feita = !tarefas[i].feita;
+
+    await salvarTarefas(diaSelecionado, tarefas);
+    carregarTarefas();
+}
+
+async function removerTarefa(i) {
+    const ref = doc(db, "users", usuarioAtivo, "tasks", diaSelecionado);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) return;
+
+    let tarefas = snap.data().tarefas;
+    tarefas.splice(i, 1);
 
     await salvarTarefas(diaSelecionado, tarefas);
     carregarTarefas();
 }
 
 /* ============================
-   REMOVER TAREFA
-   ============================ */
-
-async function removerTarefa(index) {
-    const ref = doc(db, "users", usuarioAtivo, "tasks", diaSelecionado);
-    const snap = await getDoc(ref);
-
-    if (!snap.exists()) return;
-
-    let tarefas = snap.data().tarefas;
-    tarefas.splice(index, 1);
-
-    await salvarTarefas(diaSelecionado, tarefas);
-    carregarTarefas();
-}
-
-/* ============================
-   CRIAR CARD DE TAREFA
-   ============================ */
-
+   UI DAS TAREFAS
+============================ */
 function criarCardTarefa(texto, feita, index) {
     const card = document.createElement("div");
     card.classList.add("task-card");
@@ -354,8 +326,7 @@ function criarCardTarefa(texto, feita, index) {
 
 /* ============================
    BOTÕES DO CALENDÁRIO
-   ============================ */
-
+============================ */
 prevMonthBtn.addEventListener("click", () => {
     dataAtual.setMonth(dataAtual.getMonth() - 1);
     gerarCalendario();
